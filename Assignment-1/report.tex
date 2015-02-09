@@ -1,0 +1,90 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage{multirow}
+
+\title{Report for Assignment 1}
+\author{Aditya Narayan (13EC30001)}
+
+\begin{document}
+
+\maketitle
+
+\paragraph{Determination of optimal base matrix size}
+\begin{enumerate}
+ \item \textbf{Calculation of flops required in both normal and Strassen multiplication}
+
+The submitted program was run across a range of dimension of the matrix from $\mathbf{n=2}$ to $\mathbf{n=128}$
+
+\begin{center}
+Table no.1
+\begin{tabular}[pos]{|c|c|c|}
+\hline
+\multirow{2}{*}{Dimension $\mathbf{n}$} & \multicolumn{2}{|c|}{Flops} \\ \cline{2-3}
+& Normal & Strassen\\ \hline
+2 & 2 & 25 \\ \hline 
+4 & 112 & 247 \\ \hline
+8 & 960 & 2017 \\ \hline
+16 & 7,936 & 15,271 \\ \hline
+32 & 64,512 & 1,11,505 \\ \hline
+64 & 5,20,192 & 7,98,967 \\ \hline
+128 & 41,77,920 & 56,66,497 \\ \hline
+\end{tabular}
+\end{center}
+
+ \item \textbf{Varying the base matrix size in Hybrid multiplication}
+
+The submitted program implements a Hybrid matrix multiplication as mentioned in the assignement specification. The size of the base matrix is passed as an argument and varied from $\mathbf{n=2}$ to $\mathbf{n=64}$
+
+The flops are recorded as follows:
+
+\begin{center}
+Table no.2
+\begin{tabular}[pos]{|c|c|c|c|}
+\hline
+\multirow{2}{*}{Dimension $\mathbf{n}$} & \multirow{2}{*}{Base matrix size} & \multicolumn{2}{|c|}{Savings} \\ \cline{3-4}
+& & Normal & Strassen \\ \hline
+\multicolumn{5}{|c|}{4} & 2 & - & 91 \\ \cline{2-4}
+& 4 & - & 135 \\ \hline
+\multicolumn{5}{|c|}{8} & 2 & - & 637 \\ \cline{2-4}
+& 4 & - & 945 \\ \cline{2-4}
+& 8 & - & 1,057 \\ \cline{2-4}
+& 16 & 4,352 & 51,354 \\ \cline{2-4}
+& 32 & - & 46,993 \\ \hline
+\multicolumn{5}{|c|}{16} & 2 & - & 31,213 \\ \cline{2-4}
+& 4 & - & 46,305 \\ \cline{2-4}
+& 8 & 4,800 & 51,793 \\ \cline{2-4}
+& 16 & 4,352 & 51,354 \\ \cline{2-4}
+& 32 & - & 46,993 \\ \hline
+\multicolumn{5}{|c|}{32} & 2 & - & 31,213 \\ \cline{2-4}
+& 4 & - & 46,305 \\ \cline{2-4}
+& 8 & 4,800 & 51,793 \\ \cline{2-4}
+& 16 & 4,352 & 51,354 \\ \cline{2-4}
+& 32 & - & 46,993 \\ \hline
+\multicolumn{6}{|c|}{64} & 2 & - & 2,18,491 \\ \cline{2-4}
+& 4 & 45,360 & 3,24,135 \\ \cline{2-4}
+& 8 & 83,776 & 3,62,551 \\ \cline{2-4}
+& 16 & 80,640 & 3,59,415 \\ \cline{2-4}
+& 32 & 50,176 & 3,28,951 \\ \cline{2-4}
+& 64 & - & 2,78,775 \\ \hline
+\multicolumn{6}{|c|}{128} & 2 & 40,860 & 15,29,437 \\ \cline{2-4}
+& 4 & 7,80,368 & 15,29,437 \\ \cline{2-4}
+& 8 & 10,49,280 & 25,37,857 \\ \cline{2-4}
+& 16 & 10,27,328 & 25,15,904 \\ \cline{2-4}
+& 32 & 8,14,080 & 23,02,657 \\ \cline{2-4}
+& 64 & 4,62,848 & 19,51,425 \\ \cline{2-4}
+\hline
+\end{tabular}
+\end{center}
+
+\end{enumerate}
+
+\paragraph{Inference}
+
+From Table no.1, we observer that Strassen algorithm provides us with no benefit for smaller values of $\mathbf{n}$. However, as $\mathbf{n}$ increases, Strassen algorithm bridges the gap and for $\mathbf{n>256}$, it is expected to perform better than normal multiplication.
+
+From Table no.2, we observe that for larger values of $\mathbf{n}$, the hybrid approach always gives us savings. Savings increase as $\mathbf{n}$ increases.
+The $\mathbf{base case size}$ of matrix wherein normal matrix multiplication is preferred over Strassen algorithm is the lowest $\mathbf{base case size = 2}$ for largest dimension $\mathbf{n = 128}$.
+For $\mathbf{n>32}$, the $\mathbf{base case size = 8}$ always gives us savings. Thus, $\mathbf{base case size = 8}$ can be a safe $\mathbf{base case size}$ for all future computations.
+
+\end{document}
