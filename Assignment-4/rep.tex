@@ -1,7 +1,7 @@
-\title{Assignment 2 -CS29003}
+\title{Assignment 5 -CS29003}
 \author{
         Aditya Narayan \\
-                13EC30001\\
+        13EC30001\\
 }
 \date{\today}
 
@@ -16,66 +16,65 @@
 \maketitle
 
 \begin{abstract}
-An analytical approach to different Hashing schemes.
+An analytical approach to Event-driven Simulation using heaps.
 \end{abstract}
 
 \section{Introduction}
-Hashing is used to build, search, or delete from a table.
+This experiment intends to simulate the collision of  balls on a 2D planar region bounded by straight walls. The simulation is to be done efficiently using the application of the priority queue data structure. \\
 
-The basic idea behind hashing is to take a field in a record, known as the key, and convert it through some fixed process to a numeric value, known as the hash key, which represents the position to either store or find an item in the table. The numeric value will be in the range of 0 to n-1, where n is the maximum number of slots (or buckets) in the table.
+\section{Event Driven Simulation}
+The objective of the experiment is to devise the most efficient use of the Heap data structure to simulate the collision of particles using Event driven simulation. \\
+Event driven simulation allows us to simulate events in a chronological order.\\
 
-The fixed process to convert a key to a hash key is known as a hash function. This function will be used whenever access to the table is needed.
+\section{Implementation}\label{Implementation}
+The implementation of the priority queue is described as below:\\
+\paragraph{Local Minima}
+The priority queue, Local Minima (LM), used in this experiment is a compromise between having all events organized in a single priority queue (where invalidating events is not efficient) or having all the events in a set of linked lists, one per object (where finding the next event is not efficient). To achieve this balance, we define the local minimum associated to a ball i , as the
+event of smallest time between all events E i ( x ) scheduled for object i .\\
+The events E i ( x ) are stored in a simple linked list L i , which is used to obtain the local minimum for the object i . There are N linked lists L i ; one for every ball i . Note, that the events E j ( i ) are stored in the list L j and not in the list L i. To compare the N local minima, we use a heap (CBT) which performs a binary tournament between all local minima. That is, each leaf has a ball number and each internal node (recursively up to the root) has the ball number with smaller local minimum of its two children. So, the root of the tree has the smallest local minima. Every time that a new local minimum is computed for ball i , the tournament
+is updated for all nodes in the path from the leaf labelled with i to the root. The tournament uses a complete binary tree because N is fixed. \\
+An event E ( i, j ) can be invalidated if in a previous simulation step, Cancel( j ) was called. Not all events associated to an object are invalidated at the same time. Cancel( j ) invalidates
+all events E ( j, x ), but events E (k, j ) will stay in the PQ until are invalidated by Cancel( k ) or they are detected and deleted when a local minimum for k is computed. \\
+Every time that we extract a smallest event E ( i, j ) that has been invalidated, a new local minimum for i is computed and the HEAP updated, extracting again the next chronological event. We call this operation a Reschedule .\\
 
-
-The load factor $\alpha$ of a hash table of length $\mathbf{n}$ with $\mathbf{m}$ elements is given as $\alpha=\frac{m}{n}$.
-\section{Mathematical Analysis}
-The mathematical analysis of Hashing schemes is organized as follows.
-
-\subsection{Chaining}\label{Hashing by Chaining}
-When a collision occurs, elements with the same hash key will be chained together. A chain is simply a linked list of all the elements with the same hash key.
 \paragraph{Insertion}
-Insertion involves evaluating the hash function for the key, and adding the key at the end of the linked list at that particular hash key.\\ \\
-Variation with load factor $\alpha$:\\
-Assuming that $\mathbf{m}$ elements in a hash table of length $\mathbf{n}$ be equally hashed to all $\mathbf{n}$ slots, as the load factor increases the length of the linked list at each slot increases. Thus, the number of element at any slot can be approximated by $\alpha=\frac{m}{n}$. Subsequent insertions would require $\theta(\alpha)$ operations to traverse the linked list. 
-
-\paragraph{Search}
-Searching involves evaluating the hash function for the key, and traversing the linked list at that particular hash key.\\ \\
-Variation with load factor $\alpha$:\\
-With assumptions mentioned in the Insertion section, the number of element at any slot can be approximated by $\alpha=\frac{m}{n}$. Searching such a linked list would require $\theta(\alpha)$ operations to traverse the linked list.\\
-If we search for random key entries in a randomly filled hash-table, the number of probes for the search operations is going to be nearly constant for constant $\alpha=\frac{m}{n}$. In an already filled hash table, each search operation takes nearly the same cost, approximated by $\theta(\alpha)$.
-
+Pseudocode for insertion of events: \\ \\
+\indent \indent  \textbf{Insert( E ( i, j ) )}\\
+\indent \indent \indent \textbf{if} ( j is a moving ball)\\
+\indent \indent \indent \indent E ( i, j ).c $\leftarrow$ O[ j ].c;\\
+\indent \indent \indent O [ i ]. L $\leftarrow$ \textbf{InsertList} ( i , E ( i, j ) );\\
+\indent \indent  \textbf{EndInsert}\\
+\\
+\paragraph{Next Event}
+Pseudocode for extracting the next event from the Priority Queue:\\ \\
+\indent \indent  \textbf{NextEvent ()}\\
+\indent \indent \indent \textbf{while} (1)\\
+\indent \indent \indent \indent i $\leftarrow$ HEAP [ root ]\\
+\indent \indent \indent \indent E i ( j ) $\leftarrow$ O [ i ]. L ;\\
+\indent \indent \indent \indent \textbf{if} ( j is a moving ball ) and ( E ( i, j ).c != O [ j ].c ) )\\
+\indent \indent \indent \indent \indent /* Reschedule */\\
+\indent \indent \indent \indent \indent O [ i ]. L $\leftarrow$ \textbf{LocalMin} ( i );\\
+\indent \indent \indent \indent \indent \textbf{Heapify} ( i );\\
+\indent \indent \indent \indent \textbf{else return} ( E i ( j ) );\\
+\indent \indent  \textbf{EndNextEvent}\\
 \paragraph{Deletion}
-Deletion involves evaluating the hash function for the key, and traversing the linked list at that particular hash key, similar to the Search operation.\\ \\
-Variation with load factor $\alpha$:\\
-The variation is similar to that of the Search operation.
+Pseudocode for deletion of events: \\ \\
+\indent \indent  \textbf{Delete (i)}\\
+\indent \indent \indent O [ i ]. L $\leftarrow$ NULL;\\
+\indent \indent \indent O [ i ].c $\leftarrow$ O[ i ].c + 1;\\
+\indent \indent  \textbf{EndDelete}\\
+\\
 
-\subsection{Hashing with Linear Probing}\label{Hashing with Linear Probing}
-When using a linear probe, the item will be stored in the next available slot in the table, assuming that the table is not already full.
+\subsection{Complexity Analysis}\label{Complexity Analysis}
 \paragraph{Insertion}
-Insertion involves evaluating the hash key for the particular key and then traversing the table till an unoccupied slot is found.
-Variation with load factor $\alpha$:\\
-Assuming that $\mathbf{m}$ elements in a hash table of length $\mathbf{n}$ are equally hashed to all $\mathbf{n}$ slots, as the load factor increases, the number of occupied slot increases. Thus, more slots have to be probed to find an unoccupied slot. The cost of probing can be approximated by $\alpha=\frac{m}{n}$. 
+Insertion requires adding an event to its specific linked list followed by updating the heap upwards from the linked list towards the root. This operation consumes $\theta(log(n))$ number of operations, where $\mathbf{n}$ is the number of particles in the system.
 
-The peaks in the graph point to the increased cost of rehashing the hash table to increase its size.\\
-
-The peaks in the graph point to the increased cost of rehashing the hash table to increase its size.\\
-
-\subsection{Hashing with Quadratic Probing}\label{Hashing with Quadratic Probing}
-To resolve the primary clustering problem, quadratic probing can be used. With quadratic probing, rather than always moving one spot, move i2 spots from the point of collision, so that HQ(k)=(H(k)+i2)modn where i is the minimum number of attempts to resolve the collision, starting with i=0.
-\paragraph{Insertion}
-Insertion involves evaluating the hash key for the particular key and then traversing the table till an unoccupied slot is found.
-Variation with load factor $\alpha$:\\
-Assuming that $\mathbf{m}$ elements in a hash table of length $\mathbf{n}$ are equally hashed to all $\mathbf{n}$ slots, as the load factor increases, the number of occupied slot increases. Thus, more slots have to be probed to find an unoccupied slot. The cost of probing can be approximated by $\alpha=\frac{m}{n}$. 
-
-The discontinuties in the graph correspond to the costs of rehashing the hash table.\\
-
-\subsection{Hashing with Double Hashing}\label{Hashing with Double Hashing}
-Double hashing uses the idea of applying a second hash function to the key when a collision occurs, to avoid the problem of secondary clustering. The result of the second hash function will be the number of positions form the point of collision to insert.
-\paragraph{Insertion}
-Insertion involves evaluating the hash key for the particular key. If a collision occurs, the double hash key is evaluated and then the table is traversed in steps of the double hash obtained till an unoccupied slot is found.
-Variation with load factor $\alpha$:\\
-Assuming that $\mathbf{m}$ elements in a hash table of length $\mathbf{n}$ are equally hashed to all $\mathbf{n}$ slots, as the load factor increases, the number of occupied slot increases. Thus, more slots have to be probed to find an unoccupied slot. The cost of probing can be approximated by $\alpha=\frac{m}{n}$. 
+\paragraph{Next Event}
+The operation to extract the next event in the queue is a constant time process if the dequeued event is valid. If the dequeued is invalid, the \textbf{LocalMinima} for the ball element is evaluated and the \textbf{Heap} is then heapified to maintain heap properties. This consumes $\theta(c)$ (constant) operations for the valid case, and $\theta(n * log(n))$ operations for the invalid case. In practise, the valid case occurs far greater times than the invalid case.\\
+ 
+\paragraph{Deletion or Invalidation}
+Deletion is a contant time operation in the LM Priority Queue, as it only involves clearing the linked list pertaining to a ball.
 
 \section{Results}\label{results}
-We observe the double hashing performs consistently better than all other hashing schemes as the the number of insertion probes is less. Moreover the cost of rehashing is also less, as evident from the discontinuities in the cumulative insertion cost graph.
+Thus, we observe that the Priority Queue being used, the \textbf{LocalMinima} is one of the most efficient Priority Queues for the given application.
 \end{document}

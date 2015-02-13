@@ -12,13 +12,15 @@
 #define PARTICLE_COUNT 5
 #define MIN_RADIUS 0.02
 #define MAX_RADIUS 0.05
-#define TIME_LIMIT 100.0
+#define TIME_LIMIT 10.0
 #define DELTA 0.001
 
 double sim_time = 0;
 const double time_inc = 0.010;
 
 FILE *gnuplotPipe;
+FILE *logFile[PARTICLE_COUNT];
+FILE *gnuplotGraphPipe[PARTICLE_COUNT];
 
 typedef enum COLOR{
     black = 0,
@@ -57,10 +59,10 @@ inline Ball *initBallRandom(int id)
     Ball *ball = (Ball *)malloc(sizeof(Ball));
     ball->id = id;
     ball->tstamp = sim_time;
-    ball->px = randomdouble(0.2, 0.8);
-    ball->py = randomdouble(0.2, 0.8);
-    ball->vx = randomdouble(-0.4, 0.4);
-    ball->vy = randomdouble(-0.4, 0.4);
+    ball->px = randomdouble(0.1, 0.9);
+    ball->py = randomdouble(0.1, 0.9);
+    ball->vx = randomdouble(-0.5, 0.5);
+    ball->vy = randomdouble(-0.5, 0.5);
     ball->radius = MIN_RADIUS;
     ball->colour = getCOLOR(rand() % 8);
     return ball;
@@ -103,6 +105,7 @@ LinkedList *initLinkedListObject(Interaction *event)
 }
 
 typedef struct Heap{
+    int *node;
     LinkedList **list;
     int *collision_count;
 }Heap;
@@ -111,17 +114,41 @@ inline Heap *initHeap()
 {
     int i;
     Heap *heap = (Heap *)malloc(sizeof(Heap));
+    heap->node = (int *)malloc(sizeof(int) * PARTICLE_COUNT);
     heap->list = (LinkedList **)malloc(sizeof(LinkedList *) * PARTICLE_COUNT);
     heap->collision_count = (int *)malloc(sizeof(int) * PARTICLE_COUNT);
     for(i = 0; i < PARTICLE_COUNT; i++){
         heap->collision_count[i] = 0;
         heap->list[i] = NULL;
+        heap->node[i] = -1;
     }
     return heap;
 }
 
+inline int heapify(Heap *heap, int interactee)
+{
+	int index = PARTICLE_COUNT + interactee;
+	while(index/2){
+		if(heap->node[index] == -1){
+			heap->node[index] = interactee;	
+		}
+		else if(heap->list[heap->node[index]]){
+			if(heap->list[heap->node[index]]->event->tstamp > heap->list[interactee]->event->tstamp){
+				heap->node[index] = interactee;	
+			}
+		}
+		index /= 2;
+	}
+}
+
 LinkedList *calcMinima(Heap *heap, LinkedList *list)
 {
+    if(list == NULL){
+        return NULL;
+    }
+    while(list && list->event->interactor != NULL && list->event->interactor_collision_count != heap->collision_count[list->event->interactor->id]){
+        list = list->next;
+    }
     LinkedList *minima = list;
     LinkedList *head = list;
     while(list != NULL){
@@ -133,19 +160,28 @@ LinkedList *calcMinima(Heap *heap, LinkedList *list)
                 if(list->next != NULL){
                     list->next->prev = list->prev;
                 }
-            }
-            else if(list->event->tstamp < minima->event->tstamp){
-                minima = list;
+                continue;
             }
         }
-        else{
-            if(list->event->tstamp < minima->event->tstamp){
-                minima = list;
-            }
+        if(list->event->tstamp < minima->event->tstamp){
+            minima = list;
         }
         list = list->next;
     }
+    if(minima == NULL){
+        return minima;
+    }
+    if(minima->prev != NULL){
+        minima->prev->next = minima->next;
+    }
+    if(minima->next != NULL){
+        minima->next->prev = minima->prev;
+    }
+    while(head == minima){
+        head = head->next;
+    }
     minima->next = head;
+    minima->prev = NULL;
     return minima;
 }
 
@@ -210,7 +246,12 @@ inline Interaction *getNextEvent(Heap *heap)
                 }
             }
         }
-        return nextEvent;
+        if(nextEvent->interactor != NULL && nextEvent->interactor_collision_count != heap->collision_count[nextEvent->interactor->id]){
+            heap->list[min_index] = calcMinima(heap, heap->list[min_index]);
+        }
+        else{
+            return nextEvent;
+        }
     }
 }
 
@@ -221,14 +262,77 @@ inline FILE *initPipe()
     return gnuplotPipe;
 }
 
+inline FILE *initGraph(int ball_id)
+{
+    FILE *graphPlotPipe;
+    graphPlotPipe = popen("gnuplot", "w");
+    fprintf(graphPlotPipe, "set terminal latex\n");
+    fprintf(graphPlotPipe, "set output \"ball-%d.tex\"\n", ball_id);
+    fprintf(graphPlotPipe, "set xrange [0:1]\n");
+   	fprintf(graphPlotPipe, "set yrange [-0.01:1.01]\n");
+   	fprintf(graphPlotPipe, "plot '-' with lines\n");
+    return graphPlotPipe;
+}
+
+inline FILE *initGraphPipe(int ball_id)
+{
+    FILE *graphPlotPipe;
+    graphPlotPipe = popen("gnuplot -persistent", "w");
+    fprintf(graphPlotPipe, "set xrange [0:1]\n");
+   	fprintf(graphPlotPipe, "set yrange [-0.01:1.01]\n");
+   	fprintf(graphPlotPipe, "plot '-' with lines\n");
+    return graphPlotPipe;
+}
+
+inline int drawGraph(Ball **ball)
+{
+    if(ball == NULL){
+        return -1;
+    }
+    int i;
+    for(i = 0; i < PARTICLE_COUNT; i++){
+        fprintf(logFile[i], "%lf %lf\n", ball[i]->px, ball[i]->py);
+        fprintf(gnuplotGraphPipe[i], "%lf %lf\n", ball[i]->px, ball[i]->py);
+        fflush(logFile[i]);
+        fflush(gnuplotGraphPipe[i]);
+    }
+    return 0;
+}
+
+inline int saveGraph(Ball **ball)
+{
+    if(ball == NULL){
+        return -1;
+    }
+    int i;
+    for(i = 0; i < PARTICLE_COUNT; i++){
+        fprintf(logFile[i], "e");
+        fflush(logFile[i]);
+    }
+    return 0;
+}
+
+inline int showGraph(Ball **ball)
+{
+    if(ball == NULL){
+        return -1;
+    }
+    int i;
+    for(i = 0; i < PARTICLE_COUNT; i++){
+        fprintf(gnuplotGraphPipe[i], "e");
+        fflush(gnuplotGraphPipe[i]);
+    }
+    return 0;
+}
+
 inline int drawBalls(Ball **ball)
 {
     if(ball == NULL){
         return -1;
     }
     int i, flag_write;
-    fprintf(gnuplotPipe, "set xrange [-0.1:1.1]\n");
-    fprintf(gnuplotPipe, "set yrange [-0.1:1.1]\n");
+    fprintf(gnuplotPipe, "set xrange [0:1]\n");
+    fprintf(gnuplotPipe, "set yrange [-0.01:1.01]\n");
     fprintf(gnuplotPipe, "plot '-' with circles lc rgb variable fs transparent fill solid noborder\n");
     for(i = 0; i < PARTICLE_COUNT; i++){
         flag_write = fprintf(gnuplotPipe, "%lf %lf %lf %d\n", ball[i]->px, ball[i]->py, ball[i]->radius - DELTA, ball[i]->colour);
@@ -270,12 +374,13 @@ inline int simulateTo(Ball **ball, double now)
         sim_time += time_inc;
         advanceBalls(ball, sim_time);
         drawBalls(ball);
+        drawGraph(ball);
         usleep(time_inc * 1000000);
     }
     return 0;
 }
 
-inline Interaction *eventBallCollide(Ball *ball_i, Ball *ball_j)
+inline Interaction *eventBallCollide(Heap *heap, Ball *ball_i, Ball *ball_j)
 {
     if(ball_i == ball_j){
         return NULL;
@@ -296,7 +401,7 @@ inline Interaction *eventBallCollide(Ball *ball_i, Ball *ball_j)
         return NULL;
     }
     double timeToCollision = -(relVrelP + sqrt(d)) / relVrelV;
-    if(timeToCollision > TIME_LIMIT / 10){
+    if(timeToCollision > 10){
         return NULL;
     }
 
@@ -304,10 +409,11 @@ inline Interaction *eventBallCollide(Ball *ball_i, Ball *ball_j)
     collisionEvent->tstamp = sim_time + timeToCollision;
     collisionEvent->interactee = ball_i;
     collisionEvent->interactor = ball_j;
+    collisionEvent->interactor_collision_count = heap->collision_count[ball_j->id];
     return collisionEvent;
 }
 
-inline Interaction *eventWallCollideY(Ball *ball)
+inline Interaction *eventWallCollideY(Heap *heap, Ball *ball)
 {
     if(ball == NULL){
         return NULL;
@@ -319,18 +425,19 @@ inline Interaction *eventWallCollideY(Ball *ball)
     else{
         timeToCollision = fabs((ball->py - ball->radius)/ball->vy);
     }
-    if(timeToCollision > TIME_LIMIT / 10){
+    if(timeToCollision > 10){
         return NULL;
     }
     Interaction *collisionEvent = (Interaction *)malloc(sizeof(Interaction));
     collisionEvent->interactee = ball;
     collisionEvent->interactor = NULL;
     collisionEvent->tstamp = sim_time + timeToCollision;
+    collisionEvent->interactor_collision_count = heap->collision_count[ball->id];
     return collisionEvent;
 }
 
 
-inline Interaction *eventWallCollideX(Ball *ball)
+inline Interaction *eventWallCollideX(Heap *heap, Ball *ball)
 {
     if(ball == NULL){
         return NULL;
@@ -342,13 +449,14 @@ inline Interaction *eventWallCollideX(Ball *ball)
     else{
         timeToCollision = fabs((ball->px - ball->radius)/ball->vx);
     }
-    if(timeToCollision > TIME_LIMIT / 10){
+    if(timeToCollision > 10){
         return NULL;
     }
     Interaction *collisionEvent = (Interaction *)malloc(sizeof(Interaction));
     collisionEvent->interactee = ball;
     collisionEvent->interactor = NULL;
     collisionEvent->tstamp = sim_time + timeToCollision;
+    collisionEvent->interactor_collision_count = heap->collision_count[ball->id];
     return collisionEvent;
 }
 
@@ -382,10 +490,10 @@ inline int resolveCollision(Interaction *collisionEvent)
 inline int scheduleEvent(Ball **ball, Heap *heap, int index)
 {
     int j;
-    insertToHeap(heap, eventWallCollideX(ball[index]));
-    insertToHeap(heap, eventWallCollideY(ball[index]));
+    insertToHeap(heap, eventWallCollideX(heap, ball[index]));
+    insertToHeap(heap, eventWallCollideY(heap, ball[index]));
     for(j = 0; j < PARTICLE_COUNT; j++){
-        insertToHeap(heap, eventBallCollide(ball[index], ball[j]));
+        insertToHeap(heap, eventBallCollide(heap, ball[index], ball[j]));
     }
 }
 
@@ -393,24 +501,26 @@ int main()
 {
     int i, j;
     srand(time(NULL));
+
     Heap *heap;
     Ball **ball;
     Interaction *nextCollision;
-    double px, py, vx, vy, radius;
 
     heap = initHeap();
     ball = (Ball **)malloc(PARTICLE_COUNT * sizeof(Ball *));
     gnuplotPipe = initPipe();
-    
-    FILE *state = fopen("state.txt", "r");
 
     for(i = 0; i < PARTICLE_COUNT; i++){
-        fscanf(state, "%lf %lf %lf %lf %lf\n", &px, &py, &vx, &vy, &radius);
-        ball[i] = initBall(i, px, py, vx, vy, radius, getCOLOR(rand()%8));
-        insertToHeap(heap, eventWallCollideX(ball[i]));
-        insertToHeap(heap, eventWallCollideY(ball[i]));
+    	logFile[i] = initGraph(i);
+    	gnuplotGraphPipe[i] = initGraphPipe(i);
+    }
+    
+    for(i = 0; i < PARTICLE_COUNT; i++){
+        ball[i] = initBallRandom(i);
+        insertToHeap(heap, eventWallCollideX(heap, ball[i]));
+        insertToHeap(heap, eventWallCollideY(heap, ball[i]));
         for(j = 0; j < i; j++){
-            insertToHeap(heap, eventBallCollide(ball[i], ball[j]));
+            insertToHeap(heap, eventBallCollide(heap, ball[i], ball[j]));
         }
     }
 
@@ -428,5 +538,7 @@ int main()
     }
 
     fprintf(gnuplotPipe, "quit\n");
+    saveGraph(ball);
+    showGraph(ball);
     return 0;
 }

@@ -96,15 +96,18 @@ AVLnode *insert(AVLnode *AVLnodeTree, char *key, char *tagData)
         	return leftRotate(AVLnodeTree);
     }
  
-    if (balance > 1 && key > node->left->key){
-        node->left =  leftRotate(node->left);
-        return rightRotate(node);
+    if (balance > 1){
+        if(strcmp(AVLnodeTree->child[0]->key, key)>0 ? 0:1){
+        	AVLnodeTree->child[0] =  leftRotate(AVLnodeTree->child[0]);
+        	return rightRotate(AVLnodeTree);
+        }
     }
  
-    // Right Left Case
-    if (balance < -1 && key < node->right->key){
-        node->right = rightRotate(node->right);
-        return leftRotate(node);
+    if (balance < -1){
+    	if(strcmp(AVLnodeTree->child[0]->key, key)>0 ? 1:0){
+        	AVLnodeTree->child[1] = rightRotate(AVLnodeTree->child[1]);
+        	return leftRotate(AVLnodeTree);
+    	}
     }
 	return AVLnodeTree;
 }
@@ -154,7 +157,7 @@ int main(int argc, char *argv[])
 
 	/* Loop through terminal arguments.*/
 	while(i < argc){
-		printf("%s\n",argv[i]);
+		// printf("%s\n",argv[i]);
 		if(!strcmp(argv[i],"I")){
 			i++;
 			key = argv[i];
