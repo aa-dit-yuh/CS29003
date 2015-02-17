@@ -5,7 +5,7 @@
 typedef struct AVLnode {
 	char *key;
 	char *data;
-	struct AVLnode *child[2];
+	struct AVLnode *child[3];
 	int height;
 }AVLnode;
 
@@ -112,9 +112,37 @@ AVLnode *insert(AVLnode *AVLnodeTree, char *key, char *tagData)
 	return AVLnodeTree;
 }
 
+AVLnode *search(AVLnode *AVLnodeTree, char *key)
+{
+	if(strcmp(AVLnodeTree->key, key)==0){
+		return AVLnodeTree;
+	}
+	int child = strcmp(AVLnodeTree->key, key)>0 ? 0:1;
+	if(AVLnodeTree->child[child] == NULL){
+		return NULL;
+	}
+	else{
+		return search(AVLnodeTree->child[child], key);
+	}
+}
+
+AVLnode *delete(AVLnode *AVLnodeTree, char *key)
+{
+	if(strcmp(AVLnodeTree->key, key)==0){
+		return AVLnodeTree;
+	}
+	int child = strcmp(AVLnodeTree->key, key)>0 ? 0:1;
+	if(AVLnodeTree->child[child] == NULL){
+		return NULL;
+	}
+	else{
+		return search(AVLnodeTree->child[child], key);
+	}
+}
+
 void ioTraverse(AVLnode *AVLnodeObject)
 {
-	printf("printing %s\n", AVLnodeObject->data);
+	// printf("printing %s\n", AVLnodeObject->data);
 	if(AVLnodeObject->child[0]!=NULL){
 		ioTraverse(AVLnodeObject->child[0]);
 	}
@@ -168,12 +196,21 @@ int main(int argc, char *argv[])
 		else if(!strcmp(argv[i],"S")){
 			i++;
 			key = argv[i];
-			// search(AVLnodeRoot, key);
+			AVLnode *query = search(AVLnodeRoot, key);
+			if(query == NULL){
+				puts("No such key found");
+			}
+			else{
+				while(query != NULL){
+					printf("%s %s\n", query->key, query->data);
+					query = query->child[2];
+				}
+			}
 		}
 		else if(!strcmp(argv[i],"D")){
 			i++;
 			key = argv[i];
-			// delete(AVLnodeRoot, key);	
+			// delete(AVLnodeRoot, key);
 		}
 		else if(!strcmp(argv[i],"T")){
 			ioTraverse(AVLnodeRoot);
