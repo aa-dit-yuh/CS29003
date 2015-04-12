@@ -144,7 +144,8 @@ static void skiplistIOTraverse(skipList *list)
 int main(int argc, char **argv)
 {
 	if(argc==1){
-		return 0;
+		puts("Usage I | S | D | T");
+		exit(EXIT_FAILURE);
 	}
 	int i = 1;
 	int key;
