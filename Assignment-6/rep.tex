@@ -1,0 +1,67 @@
+\title{Assignment 2 -CS29003}
+\author{
+        Aditya Narayan \\
+                13EC30001\\
+}
+\date{\today}
+
+\documentclass[12pt]{article}
+\usepackage{pgfplots}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+
+\pgfplotsset{width=10cm}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+An analytical approach to different Hashing schemes.
+\end{abstract}
+
+\section{Introduction}
+Hashing is used to build, search, or delete from a table.
+
+The basic idea behind hashing is to take a field in a record, known as the key, and convert it through some fixed process to a numeric value, known as the hash key, which represents the position to either store or find an item in the table. The numeric value will be in the range of 0 to n-1, where n is the maximum number of slots (or buckets) in the table.
+
+The fixed process to convert a key to a hash key is known as a hash function. This function will be used whenever access to the table is needed.
+
+
+The load factor $\alpha$ of a hash table of length $\mathbf{n}$ with $\mathbf{m}$ elements is given as $\alpha=\frac{m}{n}$.
+\section{Mathematical Analysis}
+The mathematical analysis of Hashing schemes is organized as follows.
+
+\subsection{Chaining}\label{Hashing by Chaining}
+When a collision occurs, elements with the same hash key will be chained together. A chain is simply a linked list of all the elements with the same hash key.
+\paragraph{Insertion}
+Insertion involves evaluating the hash function for the key, and adding the key at the end of the linked list at that particular hash key.\\ \\
+Variation with load factor $\alpha$:\\
+Assuming that $\mathbf{m}$ elements in a hash table of length $\mathbf{n}$ be equally hashed to all $\mathbf{n}$ slots, as the load factor increases the length of the linked list at each slot increases. Thus, the number of element at any slot can be approximated by $\alpha=\frac{m}{n}$. Subsequent insertions would require $\theta(\alpha)$ operations to traverse the linked list. 
+
+\paragraph{Search}
+Searching involves evaluating the hash function for the key, and traversing the linked list at that particular hash key.\\ \\
+Variation with load factor $\alpha$:\\
+With assumptions mentioned in the Insertion section, the number of element at any slot can be approximated by $\alpha=\frac{m}{n}$. Searching such a linked list would require $\theta(\alpha)$ operations to traverse the linked list.\\
+If we search for random key entries in a randomly filled hash-table, the number of probes for the search operations is going to be nearly constant for constant $\alpha=\frac{m}{n}$. In an already filled hash table, each search operation takes nearly the same cost, approximated by $\theta(\alpha)$.
+
+\paragraph{Deletion}
+Deletion involves evaluating the hash function for the key, and traversing the linked list at that particular hash key, similar to the Search operation.\\ \\
+Variation with load factor $\alpha$:\\
+The variation is similar to that of the Search operation.
+
+The peaks in the graph point to the increased cost of rehashing the hash table to increase its size.\\
+
+The peaks in the graph point to the increased cost of rehashing the hash table to increase its size.\\
+
+\subsection{Hashing with Quadratic Probing}\label{Hashing with Quadratic Probing}
+To resolve the primary clustering problem, quadratic probing can be used. With quadratic probing, rather than always moving one spot, move i2 spots from the point of collision, so that HQ(k)=(H(k)+i2)modn where i is the minimum number of attempts to resolve the collision, starting with i=0.
+\paragraph{Insertion}
+Insertion involves evaluating the hash key for the particular key and then traversing the table till an unoccupied slot is found.
+Variation with load factor $\alpha$:\\
+Assuming that $\mathbf{m}$ elements in a hash table of length $\mathbf{n}$ are equally hashed to all $\mathbf{n}$ slots, as the load factor increases, the number of occupied slot increases. Thus, more slots have to be probed to find an unoccupied slot. The cost of probing can be approximated by $\alpha=\frac{m}{n}$. 
+
+\section{Results}\label{results}
+We observe the double hashing performs consistently better than all other hashing schemes as the the number of insertion probes is less. Moreover the cost of rehashing is also less, as evident from the discontinuities in the cumulative insertion cost graph.
+\end{document}
+
+

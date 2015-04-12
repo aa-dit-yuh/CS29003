@@ -2,6 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+typedef enum ERROR_TYPE{
+    NO_ERROR=0,
+    NOT_AN_INTEGER,
+    UNINIT_ARGUMENTS,
+    NEGATIVE_INFINITY,
+    POSITIVE_INFINITY,
+}ERROR_TYPE;
+
 typedef struct AVLnode {
 	char *key;
 	char *data;
@@ -155,69 +163,66 @@ void ioTraverse(AVLnode *AVLnodeObject)
 	}
 }
 
-
-
-int main(int argc, char *argv[])
+ERROR_TYPE strToInt(char *str, int *integer)
 {
-	if(argc==1){
-		return 0;
-	}
-	char *key, *tagData;
-	int i = 1;
-	AVLnode *AVLnodeRoot;
+    if(!str){
+        return UNINIT_ARGUMENTS;
+    }
+    *integer = 0;
+    int i, len, negative = 0;
+    len = strlen(str);
+    if(str[0] == '-'){
+        if(len == 1){
+        	return NEGATIVE_INFINITY;
+        }
+        else{
+        	negative = 1;
+        	str = str + 1;
+        	len--;
+        }
+    }
+    if(str[0] == '+'){
+    	if(len == 1){
+        	return POSITIVE_INFINITY;
+    	}
+    	else{
+    		negative = 0;
+    		str = str + 1;
+    		len--;
+    	}
+    }
+    for(i = 0; i < len; i++){
+    	if(str[i] < '0' || str[i] > '9'){
+    		return NOT_AN_INTEGER;
+    	}
+        *integer = *integer * 10 + str[i] - '0';
+    }
+    if(negative == 1){
+    	*integer = -*integer;
+    }
+    return NO_ERROR;
+}
 
-	/*Create the Root Node. */
-	while(strcmp(argv[i], "I")){
-		// puts("Tree empty");
-		if(!strcmp(argv[i], "S")){
-			i+=2;
-		}
-		else if(!strcmp(argv[i], "D")){
-			i+=2;
-		}
-		else{
-			i++;
-		}
-	}
-	i++;
-	key = argv[i++];
-	tagData = argv[i++];
-	// printf("Creating Root node\n");
-	AVLnodeRoot = initialize(key, tagData);
-
-	/* Loop through terminal arguments.*/
-	while(i < argc){
-		// printf("%s\n",argv[i]);
-		if(!strcmp(argv[i],"I")){
-			i++;
-			key = argv[i];
-			i++;
-			tagData = argv[i];
-			insert(AVLnodeRoot, key, tagData);
-		}
-		else if(!strcmp(argv[i],"S")){
-			i++;
-			key = argv[i];
-			AVLnode *query = search(AVLnodeRoot, key);
-			if(query == NULL){
-				puts("No such key found");
-			}
-			else{
-				while(query != NULL){
-					printf("%s %s\n", query->key, query->data);
-					query = query->child[2];
-				}
-			}
-		}
-		else if(!strcmp(argv[i],"D")){
-			i++;
-			key = argv[i];
-			// delete(AVLnodeRoot, key);
-		}
-		else if(!strcmp(argv[i],"T")){
-			ioTraverse(AVLnodeRoot);
-		}
-		i++;
-	}
-	return 0;
+int main(int argc, char **argv)
+{
+    ERROR_TYPE error_code;
+    int i, input;
+    for(i = 1; i < argc; i++){
+        error_code = strToInt(argv[i], &input);
+        switch(error_code){
+            case NO_ERROR:
+                printf("Input is %d\n", input);
+                break;
+            case NOT_AN_INTEGER:
+                puts("Input not an integer");
+                break;
+            case NEGATIVE_INFINITY:
+                puts("-INFINITY");
+                break;
+            case POSITIVE_INFINITY:
+                puts("+INFINITY");
+                break;
+        }
+    }
+    return 0;
 }
