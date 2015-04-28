@@ -1,5 +1,5 @@
 # Algorithms - 1 CS29003
-A repository of assignments attempted under CS29003 for the Spring semester of 2015 with [Prof. Soumyajit Dey](http://cse.iitkgp.ac.in/~soumya/).  
+A repository of assignments attempted under [CS29003](http://cse.iitkgp.ac.in/~wbcm/cgi-bin/wbcm/common/staff/home.cgi?ccode=cs29003&year=2015&sem=s) for the Spring semester of 2015 with [Prof. Soumyajit Dey](http://cse.iitkgp.ac.in/~soumya/).  
 The assignment statements can be viewed at [WBCM](http://cse.iitkgp.ac.in/~wbcm/) under CS29003 for 2015-Spring.  
 
 ##License
